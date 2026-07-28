@@ -70,9 +70,10 @@ A fast, responsive, and beautifully designed AI chatbot application powered by *
 
 ---
 
-## 📦 Building for Production
+## 📦 Building & Deployment
 
-To create a production build and launch the bundled server:
+### Local / Standalone Server
+To create a production build and launch the bundled server locally or on Docker/Cloud Run:
 
 ```bash
 # Build Vite client assets & bundle backend server with esbuild
@@ -82,11 +83,26 @@ npm run build
 npm run start
 ```
 
+### 🔺 Deploying to Vercel
+
+This repository is pre-configured for seamless deployment to **Vercel**:
+
+1. **Push your code to GitHub** (or connect your repo in Vercel Dashboard).
+2. **Import Project in Vercel**:
+   - Vercel automatically detects Vite and the `/api/index.ts` serverless function.
+3. **Set Environment Variable**:
+   - In your Vercel Project Settings -> **Environment Variables**, add:
+     - `GEMINI_API_KEY` = `your_gemini_api_key_here`
+4. **Deploy!**
+   - The API routes in `api/index.ts` will run as Vercel Serverless Functions and frontend assets will be served automatically.
+
 ---
 
 ## 📁 Project Structure
 
 ```text
+├── api/
+│   └── index.ts            # Serverless Express API & Vite dev server
 ├── src/
 │   ├── components/         # Clean React UI components
 │   │   ├── ChatInput.tsx
@@ -100,8 +116,8 @@ npm run start
 │   ├── App.tsx             # Main application shell & state
 │   ├── main.tsx            # Entry point
 │   └── types.ts            # Shared TypeScript definitions
-├── server.ts               # Express server with Vite middleware & API routes
 ├── .env.example            # Environment variables template
+├── vercel.json             # Vercel configuration & rewrites
 ├── package.json
 └── README.md
 ```
