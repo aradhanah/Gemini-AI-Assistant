@@ -1,0 +1,6 @@
+{
+  "name": "Gemini AI Assistant",
+  "description": "A production-ready AI chatbot built with React, Vite, Express, and Google Gemini API with conversation context, typing indicators, and markdown formatting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
