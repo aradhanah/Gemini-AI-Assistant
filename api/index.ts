@@ -3,7 +3,6 @@ dotenv.config();
 
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -11,14 +10,14 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json());
 
-// API Routes
-app.get("/api/health", (_req, res) => {
+// API Routes - match both /api/chat and /chat for Vercel rewrite compatibility
+app.get(["/api/health", "/health"], (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.post("/api/chat", async (req, res) => {
+app.post(["/api/chat", "/chat"], async (req, res) => {
   try {
-    const { chatHistory = [], message, systemInstruction } = req.body;
+    const { chatHistory = [], message, systemInstruction } = req.body || {};
     if (!message || typeof message !== "string") {
       res.status(400).json({ error: "Message string is required." });
       return;
@@ -26,7 +25,9 @@ app.post("/api/chat", async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      res.status(500).json({ error: "GEMINI_API_KEY environment variable is not set." });
+      res.status(500).json({
+        error: "GEMINI_API_KEY environment variable is not configured. Please add GEMINI_API_KEY in your Vercel Project Settings under Environment Variables.",
+      });
       return;
     }
 
@@ -66,27 +67,33 @@ app.post("/api/chat", async (req, res) => {
 
 // Setup dev/prod static serving when running locally or in standalone container mode
 async function setupApp() {
-  if (!process.env.VERCEL) {
-    if (process.env.NODE_ENV !== "production") {
-      const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: "spa",
-      });
-      app.use(vite.middlewares);
-    } else {
-      const distPath = path.join(process.cwd(), "dist");
-      app.use(express.static(distPath));
-      app.get("*", (_req, res) => {
-        res.sendFile(path.join(distPath, "index.html"));
-      });
-    }
+  // Do not run Vite server or app.listen on Vercel serverless environment
+  if (process.env.VERCEL) {
+    return;
+  }
 
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://0.0.0.0:${PORT}`);
+  if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (_req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  });
 }
 
-setupApp();
+setupApp().catch((err) => {
+  console.error("Failed to setup local server:", err);
+});
 
 export default app;
